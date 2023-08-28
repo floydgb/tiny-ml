@@ -4,21 +4,21 @@ use crate::nueral_net::{trainer::Trainer, ActivationFn, NeuralNet};
 // Public Functions -----------------------------------------------------------
 pub fn train_circle() {
     let mut net: NeuralNet<2, 1> = NeuralNet::default()
-        .add_layer(3, ActivationFn::ReLU)
-        .add_layer(3, ActivationFn::ReLU)
+        .add_layer(5, ActivationFn::ReLU)
+        .add_layer(5, ActivationFn::ReLU)
         .add_layer(1, ActivationFn::Linear);
     let trainer = training_map::<2, 1>();
     let mut epochs = 0;
     const TOLERANCE: f32 = 0.2;
-    let mut err = trainer.train(&mut net, 10);
+    let mut err = trainer.train(&mut net, 100);
     while err > TOLERANCE {
-        err = trainer.train(&mut net, 10);
+        err = trainer.train(&mut net, 100);
         epochs += 1;
         println!("{} {}", epochs, err);
     }
     println!("In:");
     println!("run: (5,5) {:?}", net.run(&[5.0, 5.0]));
-    println!("run: (10,10) {:?}", net.run(&[10.0, 10.0]));
+    println!("run: (-10,10) {:?}", net.run(&[-10.0, 10.0]));
     println!("run: (0,0) {:?}", net.run(&[0.0, 0.0]));
     println!("run: (25,1) {:?}", net.run(&[25.0, 1.0]));
     println!("Out:");
@@ -47,8 +47,8 @@ fn training_map<const I: usize, const O: usize>() -> Trainer<2, 1> {
 
 fn inside_circle(x: i32, y: i32, radius: f32) -> f32 {
     match (x as f32).powi(2) + (y as f32).powi(2) < radius.powi(2) {
-        true => 1.0,
-        false => -1.0,
+        true => -1.0,
+        false => 1.0,
     }
 }
 
