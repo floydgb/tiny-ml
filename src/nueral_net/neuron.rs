@@ -1,19 +1,20 @@
 // Imports --------------------------------------------------------------------
-use super::*;
-use rand::random;
-use std::simd::{f32x16, f32x2, f32x4, f32x8, SimdFloat};
+use {
+    super::*,
+    std::simd::{f32x16, f32x2, f32x4, f32x8, SimdFloat},
+};
 
 // Types ----------------------------------------------------------------------
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
 pub struct Neuron {
     weights: Vec<f32>,
     bias: f32,
-    activation: Fn,
+    activation: ActivationFn,
 }
 
 // Public Functions -----------------------------------------------------------
 impl Neuron {
-    pub fn new(n_inputs: usize, bias: f32, func: Fn) -> Self {
+    pub fn new(n_inputs: usize, bias: f32, func: ActivationFn) -> Self {
         Self {
             weights: vec![1.0; n_inputs],
             bias,
@@ -21,7 +22,7 @@ impl Neuron {
         }
     }
 
-    pub fn random(n_inputs: usize, func: Fn) -> Self {
+    pub fn random(n_inputs: usize, func: ActivationFn) -> Self {
         let mut weights = vec![];
         for _ in 0..n_inputs {
             weights.push(random())
@@ -37,8 +38,9 @@ impl Neuron {
         self.weights = weights
     }
 
-    pub fn change_weight(&mut self, index: usize, change: f32) {
-        self.weights[index] += change;
+    pub fn change_weight(&mut self) {
+        let random_index = rand::thread_rng().gen_range(0..self.get_weights_len());
+        self.weights[random_index] += random::<f32>() * random_sign() * LEARNING_RATE;
     }
 
     pub fn get_weights_len(&self) -> usize {
@@ -49,8 +51,8 @@ impl Neuron {
         self.bias = bias
     }
 
-    pub fn change_bias(&mut self, change: f32) {
-        self.bias += change;
+    pub fn change_bias(&mut self) {
+        self.bias += random::<f32>() * random_sign() * LEARNING_RATE;
     }
 
     pub fn compute(&self, x: &[f32]) -> f32 {
@@ -89,8 +91,15 @@ impl Neuron {
             res += x[i] * self.weights[i];
         }
         match self.activation {
-            Fn::Linear => res,
-            Fn::ReLU => res.max(0.0),
+            ActivationFn::Linear => res,
+            ActivationFn::ReLU => res.max(0.0),
         }
+    }
+}
+
+fn random_sign() -> f32 {
+    match rand::thread_rng().gen_bool(POSITIVE_BIAS) {
+        true => 1.0,
+        false => -1.0,
     }
 }
