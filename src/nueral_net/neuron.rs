@@ -99,7 +99,7 @@ impl Neuron {
 
 fn random_sign() -> f32 {
     match rand::thread_rng().gen_bool(POSITIVE_BIAS) {
-        true => 1.0,
-        false => -1.0,
+        true => -1.0,
+        false => 1.0,
     }
 }

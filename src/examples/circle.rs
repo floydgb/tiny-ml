@@ -9,7 +9,7 @@ pub fn train_circle() {
         .add_layer(1, ActivationFn::Linear);
     let trainer = training_map::<2, 1>();
     let mut epochs = 0;
-    const TOLERANCE: f32 = 0.2;
+    const TOLERANCE: f32 = 0.3;
     let mut err = trainer.train(&mut net, 100);
     while err > TOLERANCE {
         err = trainer.train(&mut net, 100);
@@ -27,7 +27,7 @@ pub fn train_circle() {
     println!("run: (-75,75) {:?}", net.run(&[-75.0, 75.0]));
     println!("run: (99,99) {:?}", net.run(&[99.0, 99.0]));
     println!("run: (-99,-99) {:?}", net.run(&[-99.0, -99.0]));
-    assert!(epochs < 5000);
+    assert!(epochs < 500);
 }
 
 // Private Functions ----------------------------------------------------------
