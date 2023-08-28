@@ -16,7 +16,7 @@ pub struct Neuron {
 impl Neuron {
     pub fn new(n_inputs: usize, bias: f32, func: ActivationFn) -> Self {
         Self {
-            weights: vec![1.0; n_inputs],
+            weights: vec![0.0; n_inputs],
             bias,
             activation: func,
         }

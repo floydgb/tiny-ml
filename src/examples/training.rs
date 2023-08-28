@@ -20,7 +20,7 @@ pub fn train_and_run_trivial() {
     const TOLERANCE: f32 = 0.1;
 
     // Train the model.
-    let mut err = trivial_trainer.compute_error(&trivial_net);
+    let mut err = trivial_trainer.train(&mut trivial_net, 10);
     while err > TOLERANCE {
         err = trivial_trainer.train(&mut trivial_net, 10);
         println!("{}", err)

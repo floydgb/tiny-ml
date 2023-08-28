@@ -4,12 +4,12 @@ use crate::nueral_net::{trainer::Trainer, ActivationFn, NeuralNet};
 // Public Functions -----------------------------------------------------------
 pub fn train_circle() {
     let mut net: NeuralNet<2, 1> = NeuralNet::default()
-        .add_layer(5, ActivationFn::ReLU)
-        .add_layer(5, ActivationFn::ReLU)
+        .add_layer(3, ActivationFn::ReLU)
+        .add_layer(3, ActivationFn::ReLU)
         .add_layer(1, ActivationFn::Linear);
     let trainer = training_map::<2, 1>();
     let mut epochs = 0;
-    const TOLERANCE: f32 = 0.3;
+    const TOLERANCE: f32 = 0.155;
     let mut err = trainer.train(&mut net, 100);
     while err > TOLERANCE {
         err = trainer.train(&mut net, 100);
@@ -27,7 +27,16 @@ pub fn train_circle() {
     println!("run: (-75,75) {:?}", net.run(&[-75.0, 75.0]));
     println!("run: (99,99) {:?}", net.run(&[99.0, 99.0]));
     println!("run: (-99,-99) {:?}", net.run(&[-99.0, -99.0]));
-    assert!(epochs < 500);
+    assert!(epochs < 100);
+    assert!(net.run(&[5.0, 5.0]) < [1.0 + TOLERANCE * 2.0]);
+    assert!(net.run(&[-10.0, 10.0]) < [1.0 + TOLERANCE * 2.0]);
+    assert!(net.run(&[0.0, 0.0]) < [1.0 + TOLERANCE * 2.0]);
+    assert!(net.run(&[25.0, 1.0]) < [1.0 + TOLERANCE * 2.0]);
+    assert!(net.run(&[25.0, 25.0]) > [1.0 - TOLERANCE * 2.0]);
+    assert!(net.run(&[50.0, -50.0]) > [1.0 - TOLERANCE * 2.0]);
+    assert!(net.run(&[-75.0, 75.0]) > [1.0 - TOLERANCE * 2.0]);
+    assert!(net.run(&[99.0, 99.0]) > [1.0 - TOLERANCE * 2.0]);
+    assert!(net.run(&[-99.0, -99.0]) > [1.0 - TOLERANCE * 2.0]);
 }
 
 // Private Functions ----------------------------------------------------------

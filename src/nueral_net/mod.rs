@@ -12,7 +12,7 @@ use {
 
 // Constants ------------------------------------------------------------------
 pub const WEIGHT_TO_BIAS_RATIO: f64 = 0.95;
-pub const LEARNING_RATE: f32 = 0.1;
+pub const LEARNING_RATE: f32 = 0.055;
 pub const POSITIVE_BIAS: f64 = 0.5;
 
 // Types ----------------------------------------------------------------------
@@ -147,7 +147,7 @@ mod test {
         let net = NeuralNet::default()
             .add_layer(10, ActivationFn::ReLU)
             .add_layer(5, ActivationFn::Linear);
-        assert_eq!(net.run(&[1.0]), [10.0; 5])
+        assert_eq!(net.run(&[1.0]), [0.0; 5])
     }
 
     #[test]

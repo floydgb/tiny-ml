@@ -21,10 +21,10 @@ impl<const N: usize, const O: usize> Trainer<N, O> {
                 cur_err = next_err;
             }
         }
-        cur_err
+        cur_err / self.inputs.len() as f32
     }
 
-    pub fn compute_error(&self, net: &NeuralNet<N, O>) -> f32 {
+    fn compute_error(&self, net: &NeuralNet<N, O>) -> f32 {
         self.inputs
             .par_iter()
             .zip(&self.labels)
@@ -32,11 +32,8 @@ impl<const N: usize, const O: usize> Trainer<N, O> {
                 label
                     .iter()
                     .zip(net.run(input))
-                    .fold(0.0, |acc, (output, label)| {
-                        f32::max(acc, (output - label).abs())
-                    })
+                    .fold(0.0, |acc, (output, label)| acc + (output - label).abs())
             })
-            .sum::<f32>()
-            / self.inputs.len() as f32
+            .sum()
     }
 }
