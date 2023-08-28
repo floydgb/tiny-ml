@@ -2,21 +2,18 @@
 name = "tiny-ml"
 version = "1.0.0"
 edition = "2021"
-authors = ["milim <https://github.com/MilimTheTrueOne>"]
-description = "A very basic ml libary"
+authors = ["milim <https://github.com/MilimTheTrueOne>", "Greg (floydgb@gmail.com)"]
+description = "A Very Simple ML libary"
 license = "GPL-3.0-only"
 repository = "https://github.com/MilimTheTrueOne/tiny-ml"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-[features]
-default = ["parallelization"]
-parallelization = ["rayon"]
-serialization = ["serde"]
-
 [dependencies]
-rayon = {version="1.7.0", optional=true}
-rand = "0.8.5"
-serde = { version = "1.0.163", optional = true, features=["derive"] }
+rayon = "*"
+rand = "*"
+serde = "*"
+serde_derive = "*"
 
-[profile.dev]
-opt-level=3
+# Optimization level 3
+[profile.release]
+opt-level = 3

@@ -1,21 +1,19 @@
+// Imports --------------------------------------------------------------------
+use super::*;
+use rand::random;
 use std::simd::{f32x16, f32x2, f32x4, f32x8, SimdFloat};
 
-use rand::random;
-
-use super::*;
-
-/// Struct representing one Neuron
-
-#[cfg_attr(feature = "serialization", Serialize, Deserialize)]
-#[derive(Default, Debug, Clone)]
+// Types ----------------------------------------------------------------------
+#[derive(Serialize, Deserialize, Default, Debug, Clone)]
 pub struct Neuron {
     weights: Vec<f32>,
     bias: f32,
-    activation: ActivationFunction,
+    activation: Fn,
 }
 
+// Public Functions -----------------------------------------------------------
 impl Neuron {
-    pub fn new(n_inputs: usize, bias: f32, func: ActivationFunction) -> Self {
+    pub fn new(n_inputs: usize, bias: f32, func: Fn) -> Self {
         Self {
             weights: vec![1.0; n_inputs],
             bias,
@@ -23,7 +21,7 @@ impl Neuron {
         }
     }
 
-    pub fn random(n_inputs: usize, func: ActivationFunction) -> Self {
+    pub fn random(n_inputs: usize, func: Fn) -> Self {
         let mut weights = vec![];
         for _ in 0..n_inputs {
             weights.push(random())
@@ -55,15 +53,7 @@ impl Neuron {
         self.bias += change;
     }
 
-    #[inline]
     pub fn compute(&self, x: &[f32]) -> f32 {
-        //let mut res =598s self.bias;
-        //let mut i = 0;
-        //while i < self.weights.len() {
-        //    res += self.weights[i] * x[i];
-        //    i += 1;
-        //}
-
         let mut remaining_length = self.weights.len();
         let mut i = 0;
         let mut res = self.bias;
@@ -84,7 +74,6 @@ impl Neuron {
         while remaining_length >= 4 {
             let simd_weights = f32x4::from_slice(&self.weights[i..i + 4]);
             let simd_input = f32x4::from_slice(&x[i..i + 4]);
-
             res += (simd_input * simd_weights).reduce_sum();
             i += 4;
             remaining_length -= 4;
@@ -93,15 +82,15 @@ impl Neuron {
             let simd_weights = f32x2::from_slice(&self.weights[i..i + 2]);
             let simd_input = f32x2::from_slice(&x[i..i + 2]);
             res += (simd_input * simd_weights).reduce_sum();
-            i += 16;
-            remaining_length -= 16;
+            i += 2;
+            remaining_length -= 2;
         }
         if remaining_length == 1 {
             res += x[i] * self.weights[i];
         }
         match self.activation {
-            ActivationFunction::Linear => res,
-            ActivationFunction::ReLU => res.max(0.0),
+            Fn::Linear => res,
+            Fn::ReLU => res.max(0.0),
         }
     }
 }
