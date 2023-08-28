@@ -32,7 +32,9 @@ impl<const N: usize, const O: usize> Trainer<N, O> {
                 label
                     .iter()
                     .zip(net.run(input))
-                    .fold(0.0, |acc, (a, b)| acc + (a - b).abs())
+                    .fold(0.0, |acc, (output, label)| {
+                        f32::max(acc, (output - label).abs())
+                    })
             })
             .sum::<f32>()
             / self.inputs.len() as f32

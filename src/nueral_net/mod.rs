@@ -12,7 +12,7 @@ use {
 
 // Constants ------------------------------------------------------------------
 pub const WEIGHT_TO_BIAS_RATIO: f64 = 0.95;
-pub const LEARNING_RATE: f32 = 0.01;
+pub const LEARNING_RATE: f32 = 0.1;
 pub const POSITIVE_BIAS: f64 = 0.5;
 
 // Types ----------------------------------------------------------------------
