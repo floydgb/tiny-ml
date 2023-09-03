@@ -5,7 +5,7 @@ pub mod trainer;
 // Imports --------------------------------------------------------------------
 use {
     self::neuron::Neuron,
-    rand::{random, Rng},
+    rand::{distributions::Standard, random, thread_rng, Rng},
     rayon::prelude::*,
     serde_derive::{Deserialize, Serialize},
 };
@@ -35,6 +35,8 @@ pub enum ActivationFn {
     #[default]
     ReLU,
     Linear,
+    Sigmoid,
+    Tanh,
 }
 
 // Public Functions -----------------------------------------------------------
@@ -55,7 +57,7 @@ impl<const I: usize, const O: usize> NeuralNet<I, O> {
     pub fn push_random_layer(mut self, n: usize, func: ActivationFn) -> Self {
         let mut random_layer: Vec<Neuron> = vec![];
         for _ in 0..n {
-            random_layer.push(Neuron::random(self.last_layer_len(), func));
+            random_layer.push(Neuron::new_random(self.last_layer_len(), func));
         }
         self.layers.push(random_layer);
         self.set_longest_layer(n);
@@ -101,7 +103,7 @@ impl<const I: usize, const O: usize> NeuralNet<I, O> {
             Some(layer) => layer
                 .iter_mut()
                 .zip(weights)
-                .for_each(|(neuron, weight)| neuron.set_weights(weight)),
+                .for_each(|(neuron, weights)| neuron.weights = weights),
         }
         self
     }
@@ -112,23 +114,23 @@ impl<const I: usize, const O: usize> NeuralNet<I, O> {
             Some(layer) => layer
                 .iter_mut()
                 .zip(biases)
-                .for_each(|(neuron, bias)| neuron.set_bias(bias)),
+                .for_each(|(neuron, bias)| neuron.bias = bias),
         }
         self
     }
 
     pub fn run(&self, input: &[f32; I]) -> [f32; O] {
         let mut data = vec![0.0; self.longest_layer];
-        let mut temp = vec![0.0; self.longest_layer];
-        let mut out = [0.0; O];
-        data[..input.len()].copy_from_slice(&input[..]);
+        data[..input.len()].copy_from_slice(input);
+        let mut buffer = vec![0.0; self.longest_layer];
         for layer in &self.layers {
             for (i, neuron) in layer.iter().enumerate() {
-                temp[i] = neuron.compute(&data);
+                buffer[i] = neuron.compute(&data);
             }
-            (data, temp) = (temp, data);
+            std::mem::swap(&mut data, &mut buffer);
         }
-        out[..O].copy_from_slice(&data[..O]);
+        let mut out = [0.0; O];
+        out.copy_from_slice(&data[..O]);
         out
     }
 
@@ -163,9 +165,9 @@ mod test {
             .with_bias(vec![0.048, 0.12, 0.083, -0.02])
             .add_layer(1, ActivationFn::Linear)
             .with_weights(vec![vec![-1.4, 1.3, 1.4, -1.3]]);
-        assert!(net.run(&[3.0, 3.0])[0] > 0.0);
-        assert!(net.run(&[-3.0, -3.0])[0] > 0.0);
-        assert!(net.run(&[3.0, -3.0])[0] < 0.0);
-        assert!(net.run(&[-3.0, 3.0])[0] < 0.0);
+        assert!(net.run(&[3.0, 3.0]) > [0.0]);
+        assert!(net.run(&[-3.0, -3.0]) > [0.0]);
+        assert!(net.run(&[3.0, -3.0]) < [0.0]);
+        assert!(net.run(&[-3.0, 3.0]) < [0.0]);
     }
 }

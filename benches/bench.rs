@@ -2,7 +2,7 @@
 // Imports --------------------------------------------------------------------
 extern crate test;
 use test::Bencher;
-use tiny_ml::examples::{/*circle,*/ speed, training};
+use tiny_ml::examples::{circle, speed, training};
 
 // Benchmarks -----------------------------------------------------------------
 mod bench {
@@ -18,8 +18,8 @@ mod bench {
         b.iter(|| speed::speed());
     }
 
-    // #[bench]
-    // fn bench_circle(b: &mut Bencher) {
-    //     b.iter(|| circle::train_circle());
-    // }
+    #[bench]
+    fn bench_circle(b: &mut Bencher) {
+        b.iter(|| circle::train_circle());
+    }
 }

@@ -15,6 +15,7 @@ pub fn train_circle() {
         err = trainer.train(&mut net, 100);
         epochs += 1;
         println!("{} {}", epochs, err);
+        assert!(epochs < 100);
     }
     println!("In:");
     println!("run: (5,5) {:?}", net.run(&[5.0, 5.0]));
@@ -27,7 +28,6 @@ pub fn train_circle() {
     println!("run: (-75,75) {:?}", net.run(&[-75.0, 75.0]));
     println!("run: (99,99) {:?}", net.run(&[99.0, 99.0]));
     println!("run: (-99,-99) {:?}", net.run(&[-99.0, -99.0]));
-    assert!(epochs < 100);
     assert!(net.run(&[5.0, 5.0]) < [1.0 + TOLERANCE * 2.0]);
     assert!(net.run(&[-10.0, 10.0]) < [1.0 + TOLERANCE * 2.0]);
     assert!(net.run(&[0.0, 0.0]) < [1.0 + TOLERANCE * 2.0]);
