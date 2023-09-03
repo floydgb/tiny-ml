@@ -23,17 +23,6 @@ impl Neuron {
         }
     }
 
-    pub fn new_random(n_inputs: usize, func: ActivationFn) -> Neuron {
-        Self {
-            weights: thread_rng()
-                .sample_iter(Standard)
-                .take(n_inputs)
-                .collect::<Vec<f32>>(),
-            bias: random(),
-            activation: func,
-        }
-    }
-
     pub fn change_weight(&mut self) {
         let random_index = thread_rng().gen_range(0..self.weights.len());
         self.weights[random_index] += random::<f32>() * LEARNING_RATE * random_sign();

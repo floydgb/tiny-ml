@@ -28,10 +28,10 @@ impl<const N: usize, const O: usize> Trainer<N, O> {
         self.inputs
             .par_iter()
             .zip(&self.labels)
-            .map(|(input, label)| {
-                label
+            .map(|(inputs, labels)| {
+                labels
                     .iter()
-                    .zip(net.run(input))
+                    .zip(net.run(inputs))
                     .fold(0.0, |acc, (output, label)| acc + (output - label).abs())
             })
             .sum()

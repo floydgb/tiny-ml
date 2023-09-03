@@ -5,7 +5,7 @@ pub mod trainer;
 // Imports --------------------------------------------------------------------
 use {
     self::neuron::Neuron,
-    rand::{distributions::Standard, random, thread_rng, Rng},
+    rand::{random, thread_rng, Rng},
     rayon::prelude::*,
     serde_derive::{Deserialize, Serialize},
     std::mem::swap,
@@ -19,7 +19,7 @@ pub const WEIGHT_TO_BIAS_RATIO: f64 = 0.95;
 #[derive(Default, Serialize, Deserialize)]
 pub struct NeuralNet<const I: usize, const O: usize> {
     layers: Vec<Vec<Neuron>>,
-    last_edit: Option<Edit>,
+    last_edit: Edit,
 }
 
 #[derive(Default, Serialize, Deserialize)]
@@ -46,46 +46,17 @@ impl<const I: usize, const O: usize> NeuralNet<I, O> {
         self
     }
 
-    pub fn push_random_layer(mut self, n: usize, func: ActivationFn) -> Self {
-        let mut random_layer: Vec<Neuron> = vec![];
-        for _ in 0..n {
-            random_layer.push(Neuron::new_random(self.last_layer_len(), func));
-        }
-        self.layers.push(random_layer);
-        self
-    }
-
     pub fn random_edit(&mut self) {
-        let mut rng = rand::thread_rng();
-        let layer = rng.gen_range(0..self.layers.len());
-        let row = rng.gen_range(0..self.layers[layer].len());
-        let neuron = &mut self.layers[layer][row];
-        self.last_edit = Some(Edit {
-            old: neuron.clone(),
-            layer,
-            row,
-        });
-        if rng.gen_bool(WEIGHT_TO_BIAS_RATIO) {
-            neuron.change_weight();
-        } else {
-            neuron.change_bias();
+        match thread_rng().gen_bool(WEIGHT_TO_BIAS_RATIO) {
+            true => self.random_neuron().change_weight(),
+            false => self.random_neuron().change_bias(),
         }
     }
 
     pub fn undo_edit(&mut self) {
         match &self.last_edit {
-            Some(edit) => {
-                self.layers[edit.layer][edit.row] = edit.old.clone();
-            }
-            None => {}
+            Edit { layer, row, old } => self.layers[*layer][*row] = old.clone(),
         }
-    }
-
-    pub fn last_layer_len(&self) -> usize {
-        if self.layers.is_empty() {
-            return I;
-        }
-        self.layers[self.layers.len() - 1].len()
     }
 
     pub fn with_weights(mut self, weights: Vec<Vec<f32>>) -> Self {
@@ -110,7 +81,7 @@ impl<const I: usize, const O: usize> NeuralNet<I, O> {
         self
     }
 
-    pub fn longest_layer(&self) -> usize {
+    pub fn max_len(&self) -> usize {
         self.layers
             .iter()
             .map(|layer| layer.len())
@@ -119,18 +90,42 @@ impl<const I: usize, const O: usize> NeuralNet<I, O> {
     }
 
     pub fn run(&self, input: &[f32; I]) -> [f32; O] {
-        let mut buffer1 = vec![0.0; self.longest_layer()];
-        buffer1[..input.len()].copy_from_slice(input);
-        let mut buffer2 = vec![0.0; self.longest_layer()];
+        let (mut buf1, mut buf2) = (vec![0.0; self.max_len()], vec![0.0; self.max_len()]);
+        buf1[..input.len()].copy_from_slice(input);
         for layer in &self.layers {
             for (i, neuron) in layer.iter().enumerate() {
-                buffer2[i] = neuron.compute(&buffer1);
+                buf2[i] = neuron.compute(&buf1);
             }
-            swap(&mut buffer1, &mut buffer2);
+            swap(&mut buf1, &mut buf2);
         }
         let mut out = [0.0; O];
-        out.copy_from_slice(&buffer1[..O]);
+        out.copy_from_slice(&buf1[..O]);
         out
+    }
+
+    // Private Functions ------------------------------------------------------
+    fn random_neuron(&mut self) -> &mut Neuron {
+        let (layer, row) = self.random_index();
+        let neuron = &mut self.layers[layer][row];
+        self.last_edit = Edit {
+            old: neuron.clone(),
+            layer,
+            row,
+        };
+        neuron
+    }
+
+    fn random_index(&mut self) -> (usize, usize) {
+        let layer = thread_rng().gen_range(0..self.layers.len());
+        let row = thread_rng().gen_range(0..self.layers[layer].len());
+        (layer, row)
+    }
+
+    fn last_layer_len(&self) -> usize {
+        if self.layers.is_empty() {
+            return I;
+        }
+        self.layers[self.layers.len() - 1].len()
     }
 }
 
