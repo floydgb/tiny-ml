@@ -28,15 +28,15 @@ pub fn train_circle() {
     println!("run: (-75,75) {:?}", net.run(&[-75.0, 75.0]));
     println!("run: (99,99) {:?}", net.run(&[99.0, 99.0]));
     println!("run: (-99,-99) {:?}", net.run(&[-99.0, -99.0]));
-    assert!(net.run(&[5.0, 5.0]) < [1.0 + TOLERANCE * 2.0]);
-    assert!(net.run(&[-10.0, 10.0]) < [1.0 + TOLERANCE * 2.0]);
-    assert!(net.run(&[0.0, 0.0]) < [1.0 + TOLERANCE * 2.0]);
-    assert!(net.run(&[25.0, 1.0]) < [1.0 + TOLERANCE * 2.0]);
-    assert!(net.run(&[25.0, 25.0]) > [1.0 - TOLERANCE * 2.0]);
-    assert!(net.run(&[50.0, -50.0]) > [1.0 - TOLERANCE * 2.0]);
-    assert!(net.run(&[-75.0, 75.0]) > [1.0 - TOLERANCE * 2.0]);
-    assert!(net.run(&[99.0, 99.0]) > [1.0 - TOLERANCE * 2.0]);
-    assert!(net.run(&[-99.0, -99.0]) > [1.0 - TOLERANCE * 2.0]);
+    assert!(net.run(&[5.0, 5.0]) <= [1.0 + TOLERANCE]);
+    assert!(net.run(&[-10.0, 10.0]) <= [1.0 + TOLERANCE]);
+    assert!(net.run(&[0.0, 0.0]) <= [1.0 + TOLERANCE]);
+    assert!(net.run(&[25.0, 1.0]) <= [1.0 + TOLERANCE]);
+    assert!(net.run(&[25.0, 25.0]) >= [1.0 - TOLERANCE]);
+    assert!(net.run(&[50.0, -50.0]) >= [1.0 - TOLERANCE]);
+    assert!(net.run(&[-75.0, 75.0]) >= [1.0 - TOLERANCE]);
+    assert!(net.run(&[99.0, 99.0]) >= [1.0 - TOLERANCE]);
+    assert!(net.run(&[-99.0, -99.0]) >= [1.0 - TOLERANCE]);
 }
 
 // Private Functions ----------------------------------------------------------

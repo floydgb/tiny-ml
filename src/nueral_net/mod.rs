@@ -8,19 +8,18 @@ use {
     rand::{distributions::Standard, random, thread_rng, Rng},
     rayon::prelude::*,
     serde_derive::{Deserialize, Serialize},
+    std::mem::swap,
 };
 
 // Constants ------------------------------------------------------------------
+pub const LEARNING_RATE: f32 = 0.055731735;
 pub const WEIGHT_TO_BIAS_RATIO: f64 = 0.95;
-pub const LEARNING_RATE: f32 = 0.055;
-pub const POSITIVE_BIAS: f64 = 0.5;
 
 // Types ----------------------------------------------------------------------
 #[derive(Default, Serialize, Deserialize)]
 pub struct NeuralNet<const I: usize, const O: usize> {
     layers: Vec<Vec<Neuron>>,
     last_edit: Option<Edit>,
-    longest_layer: usize,
 }
 
 #[derive(Default, Serialize, Deserialize)]
@@ -44,14 +43,7 @@ impl<const I: usize, const O: usize> NeuralNet<I, O> {
     pub fn add_layer(mut self, n: usize, func: ActivationFn) -> Self {
         let new_layer = vec![Neuron::new(self.last_layer_len(), 0.0, func); n];
         self.layers.push(new_layer);
-        self.set_longest_layer(n);
         self
-    }
-
-    pub fn set_longest_layer(&mut self, n: usize) {
-        if n > self.longest_layer {
-            self.longest_layer = n;
-        }
     }
 
     pub fn push_random_layer(mut self, n: usize, func: ActivationFn) -> Self {
@@ -60,7 +52,6 @@ impl<const I: usize, const O: usize> NeuralNet<I, O> {
             random_layer.push(Neuron::new_random(self.last_layer_len(), func));
         }
         self.layers.push(random_layer);
-        self.set_longest_layer(n);
         self
     }
 
@@ -119,23 +110,27 @@ impl<const I: usize, const O: usize> NeuralNet<I, O> {
         self
     }
 
-    pub fn run(&self, input: &[f32; I]) -> [f32; O] {
-        let mut data = vec![0.0; self.longest_layer];
-        data[..input.len()].copy_from_slice(input);
-        let mut buffer = vec![0.0; self.longest_layer];
-        for layer in &self.layers {
-            for (i, neuron) in layer.iter().enumerate() {
-                buffer[i] = neuron.compute(&data);
-            }
-            std::mem::swap(&mut data, &mut buffer);
-        }
-        let mut out = [0.0; O];
-        out.copy_from_slice(&data[..O]);
-        out
+    pub fn longest_layer(&self) -> usize {
+        self.layers
+            .iter()
+            .map(|layer| layer.len())
+            .max()
+            .unwrap_or(0)
     }
 
-    pub fn par_run(&self, inputs: &Vec<[f32; I]>) -> Vec<[f32; O]> {
-        inputs.par_iter().map(|input| self.run(input)).collect()
+    pub fn run(&self, input: &[f32; I]) -> [f32; O] {
+        let mut buffer1 = vec![0.0; self.longest_layer()];
+        buffer1[..input.len()].copy_from_slice(input);
+        let mut buffer2 = vec![0.0; self.longest_layer()];
+        for layer in &self.layers {
+            for (i, neuron) in layer.iter().enumerate() {
+                buffer2[i] = neuron.compute(&buffer1);
+            }
+            swap(&mut buffer1, &mut buffer2);
+        }
+        let mut out = [0.0; O];
+        out.copy_from_slice(&buffer1[..O]);
+        out
     }
 }
 

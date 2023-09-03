@@ -1,12 +1,9 @@
 // Imports --------------------------------------------------------------------
 use {
     super::*,
-    crate::{compute_simd, compute_with_simd},
+    crate::dot_simd,
     std::simd::{f32x16, f32x2, f32x4, f32x8, SimdFloat},
 };
-
-// Constants ------------------------------------------------------------------
-const SIMD_SIZES: [usize; 5] = [16, 8, 4, 2, 1];
 
 // Types ----------------------------------------------------------------------
 #[derive(Serialize, Deserialize, Default, Debug, Clone)]
@@ -38,23 +35,16 @@ impl Neuron {
     }
 
     pub fn change_weight(&mut self) {
-        let random_index = rand::thread_rng().gen_range(0..self.weights.len());
-        self.weights[random_index] += random::<f32>() * random_sign() * LEARNING_RATE;
+        let random_index = thread_rng().gen_range(0..self.weights.len());
+        self.weights[random_index] += random::<f32>() * LEARNING_RATE * random_sign();
     }
 
     pub fn change_bias(&mut self) {
-        self.bias += random::<f32>() * random_sign() * LEARNING_RATE;
+        self.bias += random::<f32>() * LEARNING_RATE * random_sign();
     }
 
-    pub fn compute(&self, x: &[f32]) -> f32 {
-        let (mut i, mut result) = (0, self.bias);
-        for size in SIMD_SIZES {
-            while i + size <= self.weights.len() {
-                result += compute_with_simd!(size, &self.weights[i..i + size], &x[i..i + size]);
-                i += size;
-            }
-        }
-        self.activate(result)
+    pub fn compute(&self, inputs: &[f32]) -> f32 {
+        self.activate(dot(&self.weights, inputs) + self.bias)
     }
 
     pub fn activate(&self, res: f32) -> f32 {
@@ -68,33 +58,38 @@ impl Neuron {
 }
 
 // Private Functions ----------------------------------------------------------
+fn dot(x: &[f32], y: &[f32]) -> f32 {
+    let (mut i, mut result) = (0, 0.0);
+    for simd_size in [16, 8, 4, 2, 1] {
+        while i + simd_size <= x.len() {
+            let (x_slice, y_slice) = (&y[i..i + simd_size], &x[i..i + simd_size]);
+            result += match simd_size {
+                16 => dot_simd!(f32x16, x_slice, y_slice),
+                8 => dot_simd!(f32x8, x_slice, y_slice),
+                4 => dot_simd!(f32x4, x_slice, y_slice),
+                2 => dot_simd!(f32x2, x_slice, y_slice),
+                1 => x_slice[0] * y_slice[0],
+                _ => unreachable!(),
+            };
+            i += simd_size;
+        }
+    }
+    result
+}
+
 fn random_sign() -> f32 {
-    match rand::thread_rng().gen_bool(POSITIVE_BIAS) {
-        true => -1.0,
-        false => 1.0,
+    match thread_rng().gen_bool(0.5) {
+        true => 1.0,
+        false => -1.0,
     }
 }
 
-// Macros ----------------------------------------------------------------------
+// Macros ---------------------------------------------------------------------
 #[macro_export]
-macro_rules! compute_simd {
-    ($simd_type:ty, $weights:expr, $input:expr) => {{
-        let simd_weights: $simd_type = <$simd_type>::from_slice($weights);
-        let simd_input: $simd_type = <$simd_type>::from_slice($input);
-        (simd_input * simd_weights).reduce_sum()
-    }};
-}
-
-#[macro_export]
-macro_rules! compute_with_simd {
-    ($size:expr, $weights:expr, $input:expr) => {{
-        match $size {
-            16 => compute_simd!(f32x16, $weights, $input),
-            8 => compute_simd!(f32x8, $weights, $input),
-            4 => compute_simd!(f32x4, $weights, $input),
-            2 => compute_simd!(f32x2, $weights, $input),
-            1 => $input[0] * $weights[0],
-            _ => unreachable!(),
-        }
+macro_rules! dot_simd {
+    ($simd_type:ty, $x_slice:expr, $y_slice:expr) => {{
+        let x: $simd_type = <$simd_type>::from_slice($x_slice);
+        let y: $simd_type = <$simd_type>::from_slice($y_slice);
+        (x * y).reduce_sum()
     }};
 }

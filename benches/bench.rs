@@ -1,8 +1,10 @@
 #![feature(test)]
 // Imports --------------------------------------------------------------------
 extern crate test;
-use test::Bencher;
-use tiny_ml::examples::{circle, speed, training};
+use {
+    test::Bencher,
+    tiny_ml::examples::{circle, speed, training},
+};
 
 // Benchmarks -----------------------------------------------------------------
 mod bench {
