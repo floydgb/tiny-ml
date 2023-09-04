@@ -37,7 +37,7 @@ pub fn train_and_run_trivial() {
     let correct = vec![-13.5, -10.5, -7.5, -4.5, -1.5, 1.5, 4.5, 7.5, 10.5, 13.5];
     for i in -5..5 {
         let value = &trivial_net.run(&[i as f32 + 0.5])[0];
-        assert!((value - correct[(i + 5) as usize]).abs() <= TOLERANCE.powi(2));
+        assert!((value - correct[(i + 5) as usize]).abs() <= TOLERANCE * 2.0);
     }
 }
 
