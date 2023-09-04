@@ -21,7 +21,7 @@ impl<const N: usize, const O: usize> Trainer<N, O> {
                 cur_err = next_err;
             }
         }
-        cur_err / self.inputs.len() as f32
+        cur_err / self.labels.len() as f32
     }
 
     fn compute_error(&self, net: &NeuralNet<N, O>) -> f32 {

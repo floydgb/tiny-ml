@@ -12,7 +12,7 @@ use {
 };
 
 // Constants ------------------------------------------------------------------
-pub const LEARNING_RATE: f32 = 0.055731735;
+pub const LEARNING_RATE: f32 = 0.0557315;
 pub const WEIGHT_TO_BIAS_RATIO: f64 = 0.95;
 
 // Types ----------------------------------------------------------------------
@@ -24,7 +24,7 @@ pub struct NeuralNet<const I: usize, const O: usize> {
 
 #[derive(Default, Serialize, Deserialize)]
 struct Edit {
-    old: Neuron,
+    prev: Neuron,
     layer: usize,
     row: usize,
 }
@@ -54,16 +54,15 @@ impl<const I: usize, const O: usize> NeuralNet<I, O> {
     }
 
     pub fn undo_edit(&mut self) {
-        match &self.last_edit {
-            Edit { layer, row, old } => self.layers[*layer][*row] = old.clone(),
-        }
+        let Edit { layer, row, prev } = &self.last_edit;
+        self.layers[*layer][*row] = prev.clone();
     }
 
     pub fn with_weights(mut self, weights: Vec<Vec<f32>>) -> Self {
         match self.layers.last_mut() {
             None => panic!("tried to add weights before layers!"),
             Some(layer) => layer
-                .iter_mut()
+                .par_iter_mut()
                 .zip(weights)
                 .for_each(|(neuron, weights)| neuron.weights = weights),
         }
@@ -74,7 +73,7 @@ impl<const I: usize, const O: usize> NeuralNet<I, O> {
         match self.layers.last_mut() {
             None => panic!("tried to add biases before layers!"),
             Some(layer) => layer
-                .iter_mut()
+                .par_iter_mut()
                 .zip(biases)
                 .for_each(|(neuron, bias)| neuron.bias = bias),
         }
@@ -83,7 +82,7 @@ impl<const I: usize, const O: usize> NeuralNet<I, O> {
 
     pub fn max_len(&self) -> usize {
         self.layers
-            .iter()
+            .par_iter()
             .map(|layer| layer.len())
             .max()
             .unwrap_or(0)
@@ -92,12 +91,16 @@ impl<const I: usize, const O: usize> NeuralNet<I, O> {
     pub fn run(&self, input: &[f32; I]) -> [f32; O] {
         let (mut buf1, mut buf2) = (vec![0.0; self.max_len()], vec![0.0; self.max_len()]);
         buf1[..input.len()].copy_from_slice(input);
+
         for layer in &self.layers {
-            for (i, neuron) in layer.iter().enumerate() {
-                buf2[i] = neuron.compute(&buf1);
-            }
+            buf2.par_iter_mut()
+                .zip(layer.par_iter())
+                .for_each(|(buf2_elem, neuron)| {
+                    *buf2_elem = neuron.compute(&buf1);
+                });
             swap(&mut buf1, &mut buf2);
         }
+
         let mut out = [0.0; O];
         out.copy_from_slice(&buf1[..O]);
         out
@@ -108,7 +111,7 @@ impl<const I: usize, const O: usize> NeuralNet<I, O> {
         let (layer, row) = self.random_index();
         let neuron = &mut self.layers[layer][row];
         self.last_edit = Edit {
-            old: neuron.clone(),
+            prev: neuron.clone(),
             layer,
             row,
         };
